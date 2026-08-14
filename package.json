@@ -1,0 +1,35 @@
+{
+  "name": "catalogo-produtos-api",
+  "version": "1.0.0",
+  "description": "Projeto Fullstack em desenvolvimento, projetado para gerenciar um catálogo de produtos. O foco principal é a criação de um backend leve e de alto controle utilizando Express.js com TypeScript, integrado a um frontend dinâmico construído em Angular.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Betxrr/Catalogo-Produtos-API.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Betxrr/Catalogo-Produtos-API/issues"
+  },
+  "homepage": "https://github.com/Betxrr/Catalogo-Produtos-API#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
