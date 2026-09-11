@@ -2,8 +2,10 @@ import path from 'node:path';
 import sql from 'mssql';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Carrega as variáveis do arquivo .env localizado na raiz do projeto.
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+// Configuração do SQL Server.
 const dbConfig: sql.config = {
     server: process.env.DB_SERVER || 'localhost',
     options: {
@@ -18,6 +20,7 @@ const dbConfig: sql.config = {
 
 let pool: sql.ConnectionPool | null = null;
 
+// Cria e reutiliza a conexão com o banco.
 export async function connectToDatabase(): Promise<sql.ConnectionPool> {
     try {
         if (pool) {
@@ -25,7 +28,7 @@ export async function connectToDatabase(): Promise<sql.ConnectionPool> {
         }
 
         pool = await sql.connect(dbConfig);
-        console.log('✅ Conexão com o SQL Server estabelecida com sucesso usando Autenticação do Windows!');
+        console.log('✅ Conexão com o SQL Server estabelecida com sucesso usando autenticação do Windows.');
 
         return pool;
     } catch (error) {

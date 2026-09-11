@@ -7,7 +7,9 @@ exports.connectToDatabase = connectToDatabase;
 const node_path_1 = __importDefault(require("node:path"));
 const mssql_1 = __importDefault(require("mssql"));
 const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config({ path: node_path_1.default.resolve(__dirname, '../../../.env') });
+// Carrega as variáveis do arquivo .env localizado na raiz do projeto.
+dotenv_1.default.config({ path: node_path_1.default.resolve(__dirname, '../../.env') });
+// Configuração do SQL Server.
 const dbConfig = {
     server: process.env.DB_SERVER || 'localhost',
     options: {
@@ -20,13 +22,14 @@ const dbConfig = {
     port: Number(process.env.DB_PORT || 1433),
 };
 let pool = null;
+// Cria e reutiliza a conexão com o banco.
 async function connectToDatabase() {
     try {
         if (pool) {
             return pool;
         }
         pool = await mssql_1.default.connect(dbConfig);
-        console.log('✅ Conexão com o SQL Server estabelecida com sucesso usando Autenticação do Windows!');
+        console.log('✅ Conexão com o SQL Server estabelecida com sucesso usando autenticação do Windows.');
         return pool;
     }
     catch (error) {
