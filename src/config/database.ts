@@ -1,9 +1,6 @@
 import path from 'node:path';
 import sql from 'mssql';
-import dotenv from 'dotenv';
-
-// Carrega as variáveis do arquivo .env localizado na raiz do projeto.
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+import './environment';
 
 // Configuração do SQL Server.
 const dbConfig: sql.config = {

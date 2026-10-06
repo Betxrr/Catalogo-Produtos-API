@@ -1,32 +1,95 @@
-import { Product } from './product.model';
+import sql from "mssql";
+import { connectToDatabase } from "../../config/database";
+import { useMock } from "../../config/environment";
+import { Product } from "./product.model";
 
-// Repositório responsável por guardar e consultar dados de produtos em memória.
+// Repositorio de produtos
 export class ProductRepository {
-    private static products: Product[] = [
-        { id: 1, name: 'Teclado Mecânico', price: 350.0, stock: 15 },
-        { id: 2, name: 'Mouse Gamer', price: 150.0, stock: 30 },
-        { id: 3, name: 'Monitor QHD 32"', price: 1800.0, stock: 5 }
-    ];
+  // Dados mockados
+  private static products: Product[] = [
+    { id: 1, name: "Teclado Mecânico", price: 350.0, stock: 15 },
+    { id: 2, name: "Mouse Gamer", price: 150.0, stock: 30 },
+    { id: 3, name: 'Monitor QHD 32"', price: 1800.0, stock: 5 },
+  ];
 
-    async findAll(): Promise<Product[]> {
-        return ProductRepository.products;
+  // Listar produtos
+  async findAll(): Promise<Product[]> {
+    // Fonte mockada
+    if (useMock) {
+      return ProductRepository.products;
     }
 
-    async findById(id: number): Promise<Product | undefined> {
-        return ProductRepository.products.find(product => product.id === id);
+    // Consulta SQL
+    // Obs: os aliases mantem o retorno no formato esperado pela API.
+    const pool = await connectToDatabase();
+    const result = await pool
+      .request()
+      .query<Product>(
+        "SELECT id, nome AS name, preco AS price, estoque AS stock FROM produtos ORDER BY id",
+      );
+
+    return result.recordset;
+  }
+
+  // Buscar produto por ID
+  async findById(id: number): Promise<Product | undefined> {
+    // Fonte mockada
+    if (useMock) {
+      return ProductRepository.products.find((product) => product.id === id);
     }
 
-    async create(data: Omit<Product, 'id'>): Promise<Product> {
-        const newId = ProductRepository.products.length > 0
-            ? Math.max(...ProductRepository.products.map(product => product.id)) + 1
-            : 1;
+    // Consulta SQL parametrizada
+    const pool = await connectToDatabase();
+    const result = await pool
+      .request()
+      .input("id", sql.Int, id)
+      .query<Product>(
+        "SELECT id, nome AS name, preco AS price, estoque AS stock FROM produtos WHERE id = @id",
+      );
+ 
+    return result.recordset[0];
+  }
+  // ---------------------------------------------
+  // Criar produto
+  // ---------------------------------------------
 
-        const newProduct: Product = {
-            id: newId,
-            ...data
-        };
+  async create(data: Omit<Product, "id">): Promise<Product> {
+    // Inserir no SQL Server
+    // Obs: OUTPUT retorna o produto com o ID gerado pelo banco.
+    if (!useMock) {
+      const pool = await connectToDatabase();
+      const result = await pool
+        .request()
+        .input("name", sql.NVarChar, data.name)
+        .input("price", sql.Decimal(10, 2), data.price)
+        .input("stock", sql.Int, data.stock)
+        .query<Product>(
+          `INSERT INTO produtos (nome, preco, estoque)
+                     OUTPUT INSERTED.id, INSERTED.nome AS name, INSERTED.preco AS price, INSERTED.estoque AS stock
+                     VALUES (@name, @price, @stock)`,
+        );
 
-        ProductRepository.products.push(newProduct);
-        return newProduct;
+      const product = result.recordset[0];
+      if (!product) {
+        throw new Error("O banco não retornou o produto criado.");
+      }
+
+      return product;
     }
+
+    // Inserir nos dados mockados
+    const newId =
+      ProductRepository.products.length > 0
+        ? Math.max(...ProductRepository.products.map((product) => product.id)) +
+          1
+        : 1;
+
+    const newProduct: Product = {
+      id: newId,
+      ...data,
+    };
+
+    ProductRepository.products.push(newProduct);
+    return newProduct;
+  }
 }

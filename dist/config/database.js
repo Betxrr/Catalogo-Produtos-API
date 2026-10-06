@@ -4,11 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.connectToDatabase = connectToDatabase;
-const node_path_1 = __importDefault(require("node:path"));
 const mssql_1 = __importDefault(require("mssql"));
-const dotenv_1 = __importDefault(require("dotenv"));
-// Carrega as variáveis do arquivo .env localizado na raiz do projeto.
-dotenv_1.default.config({ path: node_path_1.default.resolve(__dirname, '../../.env') });
+require("./environment");
 // Configuração do SQL Server.
 const dbConfig = {
     server: process.env.DB_SERVER || 'localhost',
