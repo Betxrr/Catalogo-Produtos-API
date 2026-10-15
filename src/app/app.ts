@@ -1,5 +1,5 @@
 import express from 'express';
-import { productRoutes } from '../modules/products/product.routes';
+import { apiRoutes } from './routes';
 
 // Cria a aplicação Express e registra os módulos da API.
 export function createApp() {
@@ -8,8 +8,8 @@ export function createApp() {
     // Habilita o recebimento de JSON no corpo das requisições.
     app.use(express.json());
 
-    // Monta as rotas da aplicação.
-    app.use(productRoutes);
+    // Todas as rotas registradas recebem o prefixo /api.
+    app.use('/api', apiRoutes);
 
     return app;
 }

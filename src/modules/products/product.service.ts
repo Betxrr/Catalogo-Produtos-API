@@ -5,11 +5,52 @@ import { ProductRepository } from './product.repository';
 export class ProductService {
     constructor(private readonly productRepository: ProductRepository = new ProductRepository()) {}
 
+    // Leitura: o service delega a consulta ao repositório.
     async getAllProducts(): Promise<Product[]> {
         return this.productRepository.findAll();
     }
 
+    // Busca um produto e transforma ausência de resultado em erro de negócio.
+    async getProductById(id: number): Promise<Product> {
+        const product = await this.productRepository.findById(id);
+
+        if (!product) {
+            throw new Error('Produto não encontrado.');
+        }
+
+        return product;
+    }
+
+    // Criação: valida os campos antes de pedir ao repositório para salvar.
     async createProduct(data: Partial<Product>): Promise<Product> {
+        const productData = this.validateProduct(data);
+
+        return this.productRepository.create(productData);
+    }
+
+    // Atualização: exige os campos válidos e informa se o ID não foi encontrado.
+    async updateProduct(id: number, data: Partial<Product>): Promise<Product> {
+        const productData = this.validateProduct(data);
+        const updatedProduct = await this.productRepository.update(id, productData);
+
+        if (!updatedProduct) {
+            throw new Error('Produto não encontrado.');
+        }
+
+        return updatedProduct;
+    }
+
+    // Exclusão: o repositório informa se encontrou e removeu o produto.
+    async deleteProduct(id: number): Promise<void> {
+        const deleted = await this.productRepository.remove(id);
+
+        if (!deleted) {
+            throw new Error('Produto não encontrado.');
+        }
+    }
+
+    // Regra comum de criação e atualização: nome, preço e estoque válidos.
+    private validateProduct(data: Partial<Product>): Omit<Product, 'id'> {
         const { name, price, stock } = data;
 
         if (typeof name !== 'string' || name.trim() === '') {
@@ -29,10 +70,10 @@ export class ProductService {
             throw new Error('Estoque deve ser um número inteiro maior ou igual a zero.');
         }
 
-        return this.productRepository.create({
+        return {
             name: name.trim(),
             price,
             stock
-        });
+        };
     }
 }

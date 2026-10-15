@@ -3,16 +3,16 @@ import { connectToDatabase } from "../../config/database";
 import { useMock } from "../../config/environment";
 import { Product } from "./product.model";
 
-// Repositorio de produtos
+// Acessa os produtos no SQL Server ou na lista em memória usada para testes.
 export class ProductRepository {
-  // Dados mockados
+  // Dados temporários usados quando USE_MOCK=true.
   private static products: Product[] = [
     { id: 1, name: "Teclado Mecânico", price: 350.0, stock: 15 },
     { id: 2, name: "Mouse Gamer", price: 150.0, stock: 30 },
     { id: 3, name: 'Monitor QHD 32"', price: 1800.0, stock: 5 },
   ];
 
-  // Listar produtos
+  // Lista todos os produtos na fonte de dados ativa.
   async findAll(): Promise<Product[]> {
     // Fonte mockada
     if (useMock) {
@@ -31,7 +31,7 @@ export class ProductRepository {
     return result.recordset;
   }
 
-  // Buscar produto por ID
+  // Busca um produto; undefined significa que o ID não existe.
   async findById(id: number): Promise<Product | undefined> {
     // Fonte mockada
     if (useMock) {
@@ -49,10 +49,7 @@ export class ProductRepository {
  
     return result.recordset[0];
   }
-  // ---------------------------------------------
-  // Criar produto
-  // ---------------------------------------------
-
+  // Cria um produto e devolve o registro já com o ID atribuído.
   async create(data: Omit<Product, "id">): Promise<Product> {
     // Inserir no SQL Server
     // Obs: OUTPUT retorna o produto com o ID gerado pelo banco.
@@ -91,5 +88,56 @@ export class ProductRepository {
 
     ProductRepository.products.push(newProduct);
     return newProduct;
+  }
+
+  // Atualiza todos os campos; undefined significa que o ID não existe.
+  async update(id: number, data: Omit<Product, "id">): Promise<Product | undefined> {
+    if (!useMock) {
+      const pool = await connectToDatabase();
+      const result = await pool
+        .request()
+        .input("id", sql.Int, id)
+        .input("name", sql.NVarChar, data.name)
+        .input("price", sql.Decimal(10, 2), data.price)
+        .input("stock", sql.Int, data.stock)
+        .query<Product>(
+          `UPDATE produtos
+           SET nome = @name, preco = @price, estoque = @stock
+           OUTPUT INSERTED.id, INSERTED.nome AS name, INSERTED.preco AS price, INSERTED.estoque AS stock
+           WHERE id = @id`,
+        );
+
+      return result.recordset[0];
+    }
+
+    const productIndex = ProductRepository.products.findIndex((product) => product.id === id);
+    if (productIndex === -1) {
+      return undefined;
+    }
+
+    const updatedProduct: Product = { id, ...data };
+    ProductRepository.products[productIndex] = updatedProduct;
+    return updatedProduct;
+  }
+
+  // Remove o produto e retorna true somente quando encontrou esse ID.
+  async remove(id: number): Promise<boolean> {
+    if (!useMock) {
+      const pool = await connectToDatabase();
+      const result = await pool
+        .request()
+        .input("id", sql.Int, id)
+        .query("DELETE FROM produtos OUTPUT DELETED.id WHERE id = @id");
+
+      return result.recordset.length > 0;
+    }
+
+    const productIndex = ProductRepository.products.findIndex((product) => product.id === id);
+    if (productIndex === -1) {
+      return false;
+    }
+
+    ProductRepository.products.splice(productIndex, 1);
+    return true;
   }
 }
